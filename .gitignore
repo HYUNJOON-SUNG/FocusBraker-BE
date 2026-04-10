@@ -36,6 +36,12 @@ out/
 ### VS Code ###
 .vscode/
 
+### Env ###
+.env
+
 ### Other ###
 references/
 
+### claude ###
+.claude/
+claude.md
