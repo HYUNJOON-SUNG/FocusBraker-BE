@@ -1,0 +1,17 @@
+package com.gachon_likelion.focusbraker.global.exception;
+
+import com.gachon_likelion.focusbraker.global.common.ApiResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
+        return ResponseEntity
+                .status(e.getStatus())
+                .body(ApiResponse.error(e.getStatus(), e.getMessage()));
+    }
+}
