@@ -23,8 +23,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -285,5 +284,50 @@ class SessionControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("유효하지 않은 distraction_type입니다"));
+    }
+
+    @Test
+    @DisplayName("리포트 조회 성공 - 200 OK")
+    void getSessionReport_Success() throws Exception {
+        // given
+        Long sessionId = 1L;
+        SessionReportResponseDto responseDto = SessionReportResponseDto.builder()
+                .id(1L)
+                .sessionId(sessionId)
+                .userId(1L)
+                .totalDurationSeconds(1800)
+                .totalReactionCount(5)
+                .hairReactionCount(2)
+                .dustReactionCount(1)
+                .bugReactionCount(1)
+                .fakeNotiReactionCount(1)
+                .avgReactionTimeMs(1200)
+                .mostReactedType(DistractionType.HAIR)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        given(sessionService.getSessionReport(sessionId)).willReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/sessions/{sessionId}/report", sessionId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.session_id").value(sessionId))
+                .andExpect(jsonPath("$.data.total_reaction_count").value(5));
+    }
+
+    @Test
+    @DisplayName("리포트 조회 실패 - 리포트 없음 - 404 Not Found")
+    void getSessionReport_Fail_NotFound() throws Exception {
+        // given
+        Long sessionId = 999L;
+        given(sessionService.getSessionReport(sessionId))
+                .willThrow(new CustomException(404, "리포트가 아직 생성되지 않았습니다."));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/sessions/{sessionId}/report", sessionId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("리포트가 아직 생성되지 않았습니다."));
     }
 }
