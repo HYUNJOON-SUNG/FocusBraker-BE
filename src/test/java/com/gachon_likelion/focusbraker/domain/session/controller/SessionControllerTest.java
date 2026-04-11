@@ -1,10 +1,9 @@
 package com.gachon_likelion.focusbraker.domain.session.controller;
 
 import tools.jackson.databind.ObjectMapper;
-import com.gachon_likelion.focusbraker.domain.session.dto.SessionAbandonResponseDto;
-import com.gachon_likelion.focusbraker.domain.session.dto.SessionRequestDto;
-import com.gachon_likelion.focusbraker.domain.session.dto.SessionResponseDto;
+import com.gachon_likelion.focusbraker.domain.session.dto.*;
 import com.gachon_likelion.focusbraker.domain.session.service.SessionService;
+import com.gachon_likelion.focusbraker.global.enums.DistractionType;
 import com.gachon_likelion.focusbraker.global.enums.SessionStatus;
 import com.gachon_likelion.focusbraker.global.exception.CustomException;
 import org.junit.jupiter.api.DisplayName;
@@ -15,10 +14,14 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -108,9 +111,7 @@ class SessionControllerTest {
     @DisplayName("세션 시작 실패 - intensity_level 범위 오류 (1~5) - 400 Bad Request")
     void startSession_Fail_InvalidIntensity() throws Exception {
         // given
-        // userId: 1, intensityLevel: 6 (invalid)
         String requestBody = "{\"user_id\":1,\"intensity_level\":6,\"hair_enabled\":true,\"dust_enabled\":true,\"bug_enabled\":true,\"fake_noti_enabled\":true}";
-
 
         // when & then
         mockMvc.perform(post("/api/v1/sessions")
@@ -170,5 +171,71 @@ class SessionControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("이미 종료된 세션입니다."));
+    }
+
+    @Test
+    @DisplayName("세션 종료 성공 - 200 OK")
+    void endSession_Success() throws Exception {
+        // given
+        Long sessionId = 1L;
+        DistractionEventDto event1 = new DistractionEventDto(DistractionType.HAIR, LocalDateTime.now().minusMinutes(10), LocalDateTime.now().minusMinutes(9), 60000);
+        SessionEndRequestDto requestDto = new SessionEndRequestDto(List.of(event1));
+
+        SessionEndResponseDto responseDto = new SessionEndResponseDto(
+                EndedSessionInfoDto.builder().id(sessionId).status(SessionStatus.COMPLETED).build(),
+                SessionReportDto.builder().totalReactionCount(1).mostReactedType(DistractionType.HAIR).build()
+        );
+
+        given(sessionService.endSession(eq(sessionId), any(SessionEndRequestDto.class))).willReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/sessions/{sessionId}/end", sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.session.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.data.report.total_reaction_count").value(1));
+    }
+
+    @Test
+    @DisplayName("세션 종료 실패 - 이미 종료된 세션 - 409 Conflict")
+    void endSession_Fail_AlreadyEnded() throws Exception {
+        // given
+        Long sessionId = 1L;
+        SessionEndRequestDto requestDto = new SessionEndRequestDto(Collections.emptyList());
+
+        given(sessionService.endSession(eq(sessionId), any(SessionEndRequestDto.class)))
+                .willThrow(new CustomException(409, "이미 종료된 세션입니다."));
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/sessions/{sessionId}/end", sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("이미 종료된 세션입니다."));
+    }
+
+    @Test
+    @DisplayName("세션 종료 실패 - 이벤트 리스트 유효성 검증 실패 - 400 Bad Request")
+    void endSession_Fail_InvalidEvents() throws Exception {
+        // given
+        Long sessionId = 1L;
+        // reacted_at is null but reaction_time_ms is not
+        DistractionEventDto invalidEvent = new DistractionEventDto(DistractionType.BUG, LocalDateTime.now(), null, 1000);
+        SessionEndRequestDto requestDto = new SessionEndRequestDto(List.of(invalidEvent));
+
+        given(sessionService.endSession(eq(sessionId), any(SessionEndRequestDto.class)))
+                .willThrow(new CustomException(400, "reacted_at과 reaction_time_ms는 함께 전달되거나 함께 null이어야 합니다."));
+
+        // when & then
+        ResultActions result = mockMvc.perform(patch("/api/v1/sessions/{sessionId}/end", sessionId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestDto)));
+
+        result.andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("reacted_at과 reaction_time_ms는 함께 전달되거나 함께 null이어야 합니다."));
     }
 }
