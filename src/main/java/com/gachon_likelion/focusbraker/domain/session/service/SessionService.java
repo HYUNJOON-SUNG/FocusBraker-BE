@@ -97,6 +97,14 @@ public class SessionService {
         return SessionAbandonResponseDto.from(session);
     }
 
+    @Transactional(readOnly = true)
+    public SessionReportResponseDto getSessionReport(Long sessionId) {
+        SessionReport report = sessionReportRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> new CustomException(404, "리포트가 아직 생성되지 않았습니다."));
+
+        return SessionReportResponseDto.from(report);
+    }
+
     private OverlaySession findAndValidateSession(Long sessionId) {
         OverlaySession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new CustomException(404, "세션을 찾을 수 없습니다."));

@@ -33,4 +33,10 @@ public class SessionController {
         SessionAbandonResponseDto response = sessionService.abandonSession(sessionId);
         return ApiResponse.ok(response);
     }
+
+    @GetMapping("/{sessionId}/report")
+    public ApiResponse<SessionReportResponseDto> getSessionReport(@PathVariable Long sessionId) {
+        SessionReportResponseDto response = sessionService.getSessionReport(sessionId);
+        return ApiResponse.ok(response);
+    }
 }
