@@ -1,8 +1,6 @@
 package com.gachon_likelion.focusbraker.domain.session.controller;
 
-import com.gachon_likelion.focusbraker.domain.session.dto.SessionAbandonResponseDto;
-import com.gachon_likelion.focusbraker.domain.session.dto.SessionRequestDto;
-import com.gachon_likelion.focusbraker.domain.session.dto.SessionResponseDto;
+import com.gachon_likelion.focusbraker.domain.session.dto.*;
 import com.gachon_likelion.focusbraker.domain.session.service.SessionService;
 import com.gachon_likelion.focusbraker.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -22,6 +20,12 @@ public class SessionController {
     public ResponseEntity<ApiResponse<SessionResponseDto>> startSession(@RequestBody @Valid SessionRequestDto requestDto) {
         SessionResponseDto response = sessionService.startSession(requestDto);
         return new ResponseEntity<>(ApiResponse.created(response), HttpStatus.CREATED);
+    }
+
+    @PatchMapping("/{sessionId}/end")
+    public ApiResponse<SessionEndResponseDto> endSession(@PathVariable Long sessionId, @RequestBody @Valid SessionEndRequestDto requestDto) {
+        SessionEndResponseDto response = sessionService.endSession(sessionId, requestDto);
+        return ApiResponse.ok(response);
     }
 
     @PatchMapping("/{sessionId}/abandon")

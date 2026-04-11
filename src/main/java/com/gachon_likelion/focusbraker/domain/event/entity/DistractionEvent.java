@@ -29,18 +29,17 @@ public class DistractionEvent extends BaseEntity {
     @Column(name = "distraction_type", nullable = false)
     private DistractionType distractionType;
 
-    @Column(name = "appeared_at", nullable = false)
+    @Column(name = "appeared_at", nullable = false, columnDefinition = "DATETIME(3)")
     private LocalDateTime appearedAt;
 
-    @Column(name = "reacted_at")
+    @Column(name = "reacted_at", columnDefinition = "DATETIME(3)")
     private LocalDateTime reactedAt;
 
     @Column(name = "reaction_time_ms")
     private Integer reactionTimeMs;
 
     @Builder
-    public DistractionEvent(OverlaySession session, DistractionType distractionType, 
-                            LocalDateTime appearedAt, LocalDateTime reactedAt, Integer reactionTimeMs) {
+    public DistractionEvent(OverlaySession session, DistractionType distractionType, LocalDateTime appearedAt, LocalDateTime reactedAt, Integer reactionTimeMs) {
         this.session = session;
         this.distractionType = distractionType;
         this.appearedAt = appearedAt;
