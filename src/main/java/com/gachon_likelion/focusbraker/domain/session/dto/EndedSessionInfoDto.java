@@ -1,5 +1,6 @@
 package com.gachon_likelion.focusbraker.domain.session.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gachon_likelion.focusbraker.domain.session.entity.OverlaySession;
 import com.gachon_likelion.focusbraker.global.enums.SessionStatus;
 import lombok.Builder;
@@ -11,7 +12,11 @@ import java.time.LocalDateTime;
 public class EndedSessionInfoDto {
     private Long id;
     private SessionStatus status;
+
+    @JsonProperty("started_at")
     private LocalDateTime startedAt;
+
+    @JsonProperty("ended_at")
     private LocalDateTime endedAt;
 
     @Builder
