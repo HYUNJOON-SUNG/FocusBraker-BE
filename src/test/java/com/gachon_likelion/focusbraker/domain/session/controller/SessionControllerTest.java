@@ -238,4 +238,52 @@ class SessionControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("reacted_at과 reaction_time_ms는 함께 전달되거나 함께 null이어야 합니다."));
     }
+
+    @Test
+    @DisplayName("세션 종료 성공 - 응답 필드명(snake_case) 및 평균 시간 null 확인")
+    void endSession_Success_CheckFieldsAndNull() throws Exception {
+        // given
+        Long sessionId = 1L;
+        SessionEndRequestDto requestDto = new SessionEndRequestDto(Collections.emptyList());
+
+        SessionEndResponseDto responseDto = new SessionEndResponseDto(
+                EndedSessionInfoDto.builder()
+                        .id(sessionId)
+                        .status(SessionStatus.COMPLETED)
+                        .startedAt(LocalDateTime.now().minusHours(1))
+                        .endedAt(LocalDateTime.now())
+                        .build(),
+                SessionReportDto.builder()
+                        .totalReactionCount(0)
+                        .avgReactionTimeMs(null)
+                        .build()
+        );
+
+        given(sessionService.endSession(eq(sessionId), any(SessionEndRequestDto.class))).willReturn(responseDto);
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/sessions/{sessionId}/end", sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.session.started_at").exists())
+                .andExpect(jsonPath("$.data.session.ended_at").exists())
+                .andExpect(jsonPath("$.data.report.avg_reaction_time_ms").value(org.hamcrest.Matchers.nullValue()));
+    }
+
+    @Test
+    @DisplayName("세션 종료 실패 - 유효하지 않은 distraction_type - 400 Bad Request")
+    void endSession_Fail_InvalidEnum() throws Exception {
+        // given
+        Long sessionId = 1L;
+        String invalidJson = "{\"events\": [{\"distraction_type\": \"INVALID_TYPE\", \"appeared_at\": \"2026-04-12T02:00:00.000\"}]}";
+
+        // when & then
+        mockMvc.perform(patch("/api/v1/sessions/{sessionId}/end", sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("유효하지 않은 distraction_type입니다"));
+    }
 }

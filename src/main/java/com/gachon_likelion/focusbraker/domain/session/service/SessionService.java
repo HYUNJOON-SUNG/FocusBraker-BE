@@ -73,9 +73,8 @@ public class SessionService {
                             .reactedAt(dto.getReactedAt())
                             .reactionTimeMs(dto.getReactionTimeMs())
                             .build();
-                    // Manually set auditing fields for bulk insert
-                    event.setCreatedAt(endedAt);
-                    event.setUpdatedAt(endedAt);
+                    // Manually set auditing fields for bulk insert using helper method
+                    event.setAuditTime(endedAt);
                     return event;
                 })
                 .collect(Collectors.toList());
@@ -157,11 +156,13 @@ public class SessionService {
     }
 
     private Integer calculateAverageReactionTime(List<DistractionEvent> events) {
-        return (int) events.stream()
+        Double average = events.stream()
                 .filter(e -> e.getReactionTimeMs() != null)
                 .mapToInt(DistractionEvent::getReactionTimeMs)
                 .average()
-                .orElse(0.0);
+                .orElse(-1.0);
+
+        return average == -1.0 ? null : average.intValue();
     }
 
     private DistractionType findMostReactedType(Map<DistractionType, Integer> reactionCounts) {

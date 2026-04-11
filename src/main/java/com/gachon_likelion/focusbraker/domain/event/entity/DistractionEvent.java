@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 
 @Entity
@@ -45,5 +46,19 @@ public class DistractionEvent extends BaseEntity {
         this.appearedAt = appearedAt;
         this.reactedAt = reactedAt;
         this.reactionTimeMs = reactionTimeMs;
+    }
+
+    public void setAuditTime(LocalDateTime time) {
+        try {
+            Field createdAtField = BaseEntity.class.getDeclaredField("createdAt");
+            createdAtField.setAccessible(true);
+            createdAtField.set(this, time);
+
+            Field updatedAtField = BaseEntity.class.getDeclaredField("updatedAt");
+            updatedAtField.setAccessible(true);
+            updatedAtField.set(this, time);
+        } catch (Exception e) {
+            throw new RuntimeException("Audit 필드 설정 중 오류 발생", e);
+        }
     }
 }
