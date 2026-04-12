@@ -30,10 +30,10 @@ public class DistractionEvent extends BaseEntity {
     @Column(name = "distraction_type", nullable = false)
     private DistractionType distractionType;
 
-    @Column(name = "appeared_at", nullable = false, columnDefinition = "DATETIME(3)")
+    @Column(name = "appeared_at", nullable = false, columnDefinition = "TIMESTAMP(3)")
     private LocalDateTime appearedAt;
 
-    @Column(name = "reacted_at", columnDefinition = "DATETIME(3)")
+    @Column(name = "reacted_at", columnDefinition = "TIMESTAMP(3)")
     private LocalDateTime reactedAt;
 
     @Column(name = "reaction_time_ms")
