@@ -1,0 +1,9 @@
+.gradle
+build
+bin
+.git
+.env
+.claude
+.vscode
+references
+*.md
